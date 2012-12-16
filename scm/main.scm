@@ -9,8 +9,6 @@
     (set-int-field this
                    (get-field (get-object-class this) "signalFd" (type-signature int))
                    out)
-    (print "set fd" out)
-    (print "init!")
     (thread-start! (lambda ()
                      (let loop ()
                        (print "hello from another thread")
@@ -24,7 +22,7 @@
         (let ((o (call-object-method (get-object-field
                                       this
                                       (get-field (get-object-class this)
-                                                 "queue"
+                                                 "eventQueue"
                                                  (type-signature java.util.concurrent.ConcurrentLinkedQueue)))
                                      (method java.util.concurrent.ConcurrentLinkedQueue
                                              java.lang.Object
