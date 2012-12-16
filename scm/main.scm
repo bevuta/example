@@ -1,4 +1,10 @@
-(use jni android-log posix srfi-18)
+;; FIXME: this is needed for some reason
+(define %##sys#find-extension ##sys#find-extension)
+(define (##sys#find-extension p inc?)
+  (or (%##sys#find-extension p inc?)
+      (%##sys#find-extension (string-append "lib" p) inc?)))
+
+(use jni  android-log posix srfi-18)
 
 (jni-init)
 
