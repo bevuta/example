@@ -32,7 +32,7 @@ run*: install
 	adb shell killall $(PACKAGE)
 	adb shell am start -n $(PACKAGE)/.$(ACTIVITY)
 
-install: $(PWD)/$(NAME)/ $(PWD)/$(NAME)/libs/$(ARCH)/libchicken.so \
+install: $(PWD)/$(NAME)/ $(PWD)/$(NAME)/libs/$(ARCH) $(PWD)/$(NAME)/libs/$(ARCH)/libchicken.so \
 		$(foreach egg-path,$(shell ls $(CHICKEN_TARGET_EGGS_PATH)/*.so), \
 			$(PWD)/$(NAME)/libs/$(ARCH)/lib$(shell basename $(egg-path))) \
 		$(foreach scm-path,$(shell ls $(PWD)/scm/*.scm), \
@@ -46,6 +46,9 @@ $(PWD)/$(NAME)/libs/$(ARCH)/lib%.so: $(CHICKEN_TARGET_EGGS_PATH)/%.so
 
 $(PWD)/$(NAME)/libs/$(ARCH)/lib%.so: $(PWD)/scm/%.scm
 	csc -s -llog -landroid -I$(PWD)/scm/include -o $@ $<
+
+$(PWD)/$(NAME)/libs/$(ARCH):
+	mkdir -p $@
 
 clean:
 	rm -rf $(NAME)
