@@ -1,0 +1,92 @@
+* Android Activity with Chicken Scheme
+- Chicken Scheme needs its own thread
+  - if Chicken would run on on thr main thread
+    the ui will always block and callbacks are
+    probably only possible from java->chicken.
+  - starting chicken on its own thread brings
+    other problems. as now calls into Chicken
+    have to be run inside its own thread.
+    - to overcome this we implement a Backend
+      java class which implements Runnable to
+      spwan a java thread and starts Chicken.
+      - the Backend class in java uses a
+	ConcurrentLinkedQueue to store events
+	(arbitary objects) asynchronously to
+	use them later in a Chicken callback.
+      - the runnable will load basic library
+	dependencys and start the main loop
+	inside Chicken which waits for signals.
+      - if a event should be sent to Chicken
+	it will be stored inside the queue and
+	the native method signal will be called.
+    - inside the loop Chicken will make use of 
+      thread-wait-for-i/o to wait for signals 
+      on a pipe prevoiusly created. the native 
+      function signal will write into that pipe 
+      and thus makes thread-wait-for-i/o return. 
+      Chicken pops the event from the queue  and
+      "does the right thing to do" to dispatch.
+  - a similar problem is calling ui elements from
+    our Chicken thread as every call into ui must
+    be done from the main thread where ui lives.
+    - to be able to do this we need a similar
+      mechanism which the Android framework luckily
+      already provides for us with its Handler class.
+      - the handler implements message passing for
+	chicken->ui and guarantees every call will
+	be made inside the main thread whenever it
+	got time for it just like in Chicken.
+  - with this in place we are now able to implement
+    the activity lifecycle with callbacks into our
+    Chicken thread and can access ui from there all
+    asynchronously without waiting for processing.
+    - this could be a problem if we need to know
+      a specific operation is finished before we
+      can proceed to the next operation safely.
+      - this could be adressed by some kind of 
+	transaction system which keeps track of the
+	state of a message in the queue by triggering
+	some signal to the main loop when its done.
+  - to call into ui methods we also need wrap around
+    the code needed for it in Handler so it will run
+    on the main thread. This either means we will have
+    wraper code for each and every ui class or some
+    wraper around the Reflection framework in java or
+    maybe even both to be more flexible in describing
+    what needs to be done and having performance where
+    needed by implementing those in java without it.
+  - ui elements will be defined in xml layout files
+    used by the Android framework to have fewer java
+    calls through jni/reflection and be able to use
+    existing gui designers and Android framework tools.
+  - each Activity declared in the projects maniefest
+    file must be implemented in its own library which
+    will be dispatched by the Chicken backend loop.
+    - to do this we will have a base class for a
+      Chicken Activity a new Activity must subclass
+      this one and have the corresponding implementations
+      defined in a "equaly" named shared object.
+    - to receive callbacks from ui elements we implement
+      Listner for the View events that exist and when a 
+      event is handled the View gets pushed into the
+      Backend queue and Chicken receives the signal.
+  - an Activity isnt meant as "always runs" application
+    thus its likely that we will get killed at some time
+    or the runtime will ask us kindly to save our state.
+    - i think it could be interesting to "save" the
+      state as continuation if thats possible so we
+      can just resume our operations when we wake up
+      again without doing much for having this.
+    - if the application cannot resume its state after
+      beeing suspended it could just act like its first
+      called which is not what the user will expect.
+  - in contrast a long living Service could be handled
+    in the same ways but wouldnt have to deal with
+    ui elements and also will just be killed when
+    there is not enough memory left on the device.
+  - those things may change the way we will have to
+    deal with memory managment as we need to pay 
+    special attention when changing threads.
+    - we also need to make sure that our references
+      are not invalid after we have beeing suspended.
+	
