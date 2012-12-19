@@ -16,8 +16,12 @@ public class NativeChicken extends Activity
             eventType = type;
             eventTarget = target;
         }
-    }
 
+	@Override 
+	public String toString() {
+	    return super.toString() + " [ " + eventType + " / " + eventTarget.toString() + " ]";
+	}
+    }
 
     /** Called when the activity is first created. */
     @Override
