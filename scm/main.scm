@@ -11,12 +11,7 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
 <#
 
 (define (handle-event backend)
-  (let* ((ConcurrentLinkedQueue/instance    (field backend 'eventQueue))
-	 (Event/instance                    (call ConcurrentLinkedQueue/instance 'poll)))
-    (jprint Event/instance)
-    
-    (delete-local-ref ConcurrentLinkedQueue/instance)
-    (delete-local-ref Event/instance)))
+  (jprint (call (field backend 'eventQueue) 'poll)))
 
 
 (define-method (com.bevuta.androidChickenTest.Backend.main this) void
