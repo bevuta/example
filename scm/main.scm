@@ -1,9 +1,3 @@
-;; FIXME: this is needed for some reason
-(define %##sys#find-extension ##sys#find-extension)
-(define (##sys#find-extension p inc?)
-  (or (%##sys#find-extension p inc?)
-      (%##sys#find-extension (string-append "lib" p) inc?)))
-
 (use android-log posix srfi-18 jni jni-reflection)
 
 (jni-init)
@@ -18,14 +12,10 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
 
 (define (handle-event backend)
   (let* ((ConcurrentLinkedQueue/instance    (field backend 'eventQueue))
-	 (Event/class                       (class com.bevuta.androidChickenTest.NativeChicken$Event))
-	 (ConcurrentLinkedQueue.poll/method (method java.util.concurrent.ConcurrentLinkedQueue java.lang.Object poll))
-	 (Event/instance                    (call-object-method ConcurrentLinkedQueue/instance ConcurrentLinkedQueue.poll/method #f)))
-
+	 (Event/instance                    (call ConcurrentLinkedQueue/instance 'poll)))
     (jprint Event/instance)
-
+    
     (delete-local-ref ConcurrentLinkedQueue/instance)
-    (delete-local-ref Event/class)
     (delete-local-ref Event/instance)))
 
 
