@@ -1,0 +1,44 @@
+* Example project for Chicken Scheme on Android
+  This project shows how the Chicken Scheme runtime can be used in Java/Android.
+
+** Prerequisites
+    - First of all you need a Chicken Scheme corss compiler toolchain to build this project
+    - Replace the values for CHICKEN_PATH, SDK_PATH, NDK_PATH in the Makefile with the values
+      matching your system configuration. Of course the CHICKEN_PATH needs to be set to the
+      directory where your cross compiler toolchain was build in.
+    - To use this example you need to install three extra eggs into your cross compiler toolchain.
+      - jni
+	JNI is the interface used to share data betweewn Java and Chicken.
+	it gives us the ability to access memory and call methods in the JVM.
+	https://github.com/chicken-mobile/jni
+      - jni-reflection
+	With the use of reflection the access to the JVM will be eased it makes
+	use of the stuff in java.lang.reflect to dwim.
+	The reflection egg lies inside the jni repository in "reflection/".
+      - android-log
+	Normally an Activity got no stdin and stdout instead Android uses its own
+	logging facility. By loading this egg current-input-port and current-output-port
+	are redirected into a line buffered port that prints lines with either error or
+	info priority to the Android log so that we ware able to use print etc. naturally. 
+	Writing to stdou or stderr kills the application immediately.
+
+** Build
+   - If you build the cross compiler, setup the Makefile and installed the three eggs you
+     can continue to build the application package by using make. This will compile all
+     scheme code in the "scm/" directory to shared objects for android, copy them along
+     with all eggs installed into our cross compiler toolchain into the Android project,
+     build the Android project and finally tries to install it on an attached phone.
+
+** How to Use
+   - This is just a basic example on how to package the Chicken runtime into an Android
+     application. You can get a better idea how things will work when you read the 
+     Backend.org file in this repository. Basically calls into Chicken from Java are
+     signaled through a pipe and some mechanism waits for them to be processed.
+   - The Makefile will compile every ".scm" in "scm/" for use in Android.
+   - The path "scm/include" is in the include path and can be used to include ".scm"
+     files you dont wont to compile separately as shared object for Android.
+   - Installed eggs will be copied over if they changed in the cross compiler toolchain.
+
+	
+
+	
