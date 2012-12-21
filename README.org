@@ -10,24 +10,24 @@
 *** To use this example you need to install three extra eggs into your cross compiler toolchain.
     - jni https://github.com/chicken-mobile/jni
       - JNI is the interface used to share data betweewn Java and Chicken.
-        it gives us the ability to access memory and call methods in the JVM.
+        it gives us the ability to access memory methods in the JVM.
     - jni-reflection
-      With the use of reflection the access to the JVM will be eased it makes
-      use of the stuff in java.lang.reflect to dwim.
-      The reflection egg lies inside the jni repository in "reflection/".
+      - With the use of reflection the access to the JVM will be eased it makes
+	use of the stuff in java.lang.reflect to dwim.
+	The reflection egg lies inside the jni repository in "reflection/".
     - android-log
-      Normally an Activity got no stdin and stdout instead Android uses its own
-      logging facility. By loading this egg current-input-port and current-output-port
-      are redirected into a line buffered port that prints lines with either error or
-      info priority to the Android log so that we ware able to use print etc. naturally. 
-      Writing to stdout or stderr kills the application immediately.
+      - Normally an Activity got no stdin and stdout instead Android uses its own
+	logging facility. By loading this egg current-input-port and current-output-port
+	are redirected into a line buffered port that prints lines with either error or
+	info priority to the Android log so that we ware able to use print etc. naturally. 
+	Writing to stdout or stderr kills the application immediately.
 
 ** Build
-   - If you build the cross compiler, setup the Makefile and installed the three eggs you
-     can continue to build the application package by using make. This will compile all
+   - If you build the cross compiler, setup the Makefile and installed the eggs you can 
+     continue to build the application package by using make. This will compile all
      scheme code in the "scm/" directory to shared objects for android, copy them along
      with all eggs installed into our cross compiler toolchain into the Android project,
-     build the Android project and finally tries to install it on an attached phone.
+     build the project and tries to install it on an attached phone.
 
 ** How to Use
    - The Makefile will compile every ".scm" in "scm/" for use in Android.
