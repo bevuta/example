@@ -7,15 +7,15 @@
       matching your system configuration. Of course the CHICKEN_PATH needs to be set to the
       directory where your cross compiler toolchain was build in.
     - To use this example you need to install three extra eggs into your cross compiler toolchain.
-      - jni
+      * jni
 	JNI is the interface used to share data betweewn Java and Chicken.
 	it gives us the ability to access memory and call methods in the JVM.
 	https://github.com/chicken-mobile/jni
-      - jni-reflection
+      * jni-reflection
 	With the use of reflection the access to the JVM will be eased it makes
 	use of the stuff in java.lang.reflect to dwim.
 	The reflection egg lies inside the jni repository in "reflection/".
-      - android-log
+      * android-log
 	Normally an Activity got no stdin and stdout instead Android uses its own
 	logging facility. By loading this egg current-input-port and current-output-port
 	are redirected into a line buffered port that prints lines with either error or
@@ -30,14 +30,14 @@
      build the Android project and finally tries to install it on an attached phone.
 
 ** How to Use
-   - This is just a basic example on how to package the Chicken runtime into an Android
-     application. You can get a better idea how things will work when you read the 
-     Backend.org file in this repository. Basically calls into Chicken from Java are
-     signaled through a pipe and some mechanism waits for them to be processed.
    - The Makefile will compile every ".scm" in "scm/" for use in Android.
    - The path "scm/include" is in the include path and can be used to include ".scm"
      files you dont wont to compile separately as shared object for Android.
    - Installed eggs will be copied over if they changed in the cross compiler toolchain.
+   - This is just a basic example on how to package the Chicken runtime into an Android
+     application. You can get a better idea how things will work when you read the 
+     Backend.org file in this repository. Basically calls into Chicken from Java are
+     signaled through a pipe and some mechanism waits for them to be processed.
 
 	
 
