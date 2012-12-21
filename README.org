@@ -8,10 +8,9 @@
      matching your system configuration. Of course the CHICKEN_PATH needs to be set to the
      directory where your cross compiler toolchain was build in.
 *** To use this example you need to install three extra eggs into your cross compiler toolchain.
-    - jni
+    - jni https://github.com/chicken-mobile/jni
       - JNI is the interface used to share data betweewn Java and Chicken.
         it gives us the ability to access memory and call methods in the JVM.
-	https://github.com/chicken-mobile/jni
     - jni-reflection
       With the use of reflection the access to the JVM will be eased it makes
       use of the stuff in java.lang.reflect to dwim.
