@@ -7,17 +7,36 @@ import android.util.Log;
 
 public class NativeChicken extends Activity
 {
-    public Backend backend;
+    public Backend backend = new Backend();
 
-    /** Called when the activity is first created. */
     @Override
-    public void onCreate(Bundle savedInstanceState)
-    {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        backend = new Backend();
-
-	Log.d("foo", "do i actually wait?");
-	backend.sendEvent(Backend.ON_CREATE);
-	Log.d("foo", "hmm?");
+	backend.sendEvent(backend.createCallbackId);
+    }
+    @Override
+    protected void onStart() {
+        super.onStart();
+	backend.sendEvent(backend.startCallbackId);
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+	backend.sendEvent(backend.resumeCallbackId);
+    }
+    @Override
+    protected void onPause() {
+        super.onPause();
+	backend.sendEvent(backend.pauseCallbackId);
+    }
+    @Override
+    protected void onStop() {
+        super.onStop();
+	backend.sendEvent(backend.stopCallbackId);
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+	backend.sendEvent(backend.destroyCallbackId);
     }
 }

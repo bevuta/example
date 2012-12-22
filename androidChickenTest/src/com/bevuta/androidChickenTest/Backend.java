@@ -42,6 +42,13 @@ public class Backend implements Runnable
     private final Lock lock = new ReentrantLock();
     private final Condition chickenReady  = lock.newCondition(); 
 
+    protected int  createCallbackId;
+    protected int   startCallbackId;
+    protected int  resumeCallbackId;
+    protected int   pauseCallbackId;
+    protected int    stopCallbackId;
+    protected int destroyCallbackId;
+
 
     public Backend() {       
 	thread = new Thread(this);
