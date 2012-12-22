@@ -1,4 +1,5 @@
-(use android-log posix srfi-18 jni jni-reflection)
+(use android-log posix srfi-18 jni jni-reflection
+     matchable)
 
 (jni-init)
 #>
@@ -10,12 +11,19 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
 }
 <#
 
-(define backend-thread #f)
+(define this
+  (make-parameter #f))
+
+
 (define (handle-event event)
-  (print "foof")
+  (case event
+    ((0) 
+     (thread-sleep! 5)
+     (print "lifecycle event"))))
 
 
 (define-method (com.bevuta.androidChickenTest.Backend.main backend) void
+  (this backend)
   (print "hello from backend!")
   
   (receive (in out) (create-pipe)
@@ -27,15 +35,14 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
 
       (let loop ()
 	(thread-wait-for-i/o! in)
-	
-	
+		
 	(read-char in*)
-	(handle-event #f)
+	(handle-event (field backend 'eventType))
 	
 	(call (field backend 'lock) 'lock)
 	(call (field backend 'chickenReady) 'signal)
 	(call (field backend 'lock) 'unlock)
 
-        (loop))))))
+        (loop)))))
 
 (return-to-host)

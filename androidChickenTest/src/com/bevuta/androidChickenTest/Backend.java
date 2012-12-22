@@ -7,10 +7,8 @@ import java.util.concurrent.locks.*;
 
 public class Backend implements Runnable
 {
+    public enum ReturnValueType { VOID, BYTE, CHAR, SHORT, INT, LONG, DOUBLE, FLOAT, OBJECT}	
     public static class ReturnValue {
-	public enum ReturnValueType { BYTE, CHAR, SHORT, INT, LONG, DOUBLE, FLOAT, OBJECT}	
-	public int    type;
-
 	public Object objectValue;
 	public byte   byteValue;
 	public char   charValue;
@@ -21,20 +19,20 @@ public class Backend implements Runnable
 	public float  floatValue;
     }
 
-    class Event {
-        public Object eventTarget;
-        public String eventType;
+    class ChickenCallback {
+	public ReturnValueType valueType;
+	public ReturnValue value;
+	public Object sourceObject;
 
-        public Event(String type, Object target) {
-            eventType = type;
-            eventTarget = target;
+        public ChickenCallback(Object source, ReturnValueType t, ReturnValue v) {
+	    this.valueType = t;
+	    this.value = v;
+	    this.sourceObject = source;
         }
-
-	@Override 
-	public String toString() {
-	    return super.toString() + " [ " + eventType + " / " + eventTarget.toString() + " ]";
-	}
     }
+
+    public static final int ON_CREATE = 0;
+    public int eventType;
     
     private int signalFd;
     private native void main();
@@ -58,8 +56,18 @@ public class Backend implements Runnable
 	}
     }
 
-    public void sendEvent(Object o) {
-	signal();
+    public void sendEvent(int e) {
+	try{	    
+	    lock.lock();
+
+	    eventType = e;
+	    signal();
+
+	    chickenReady.await();
+	} catch (InterruptedException exn){
+	} finally {
+	    lock.unlock();
+	}
     }
 
     public void run() {

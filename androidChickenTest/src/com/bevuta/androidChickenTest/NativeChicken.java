@@ -3,6 +3,7 @@ package com.bevuta.androidChickenTest;
 import android.app.Activity;
 import android.view.View;
 import android.os.Bundle;
+import android.util.Log;
 
 public class NativeChicken extends Activity
 {
@@ -14,9 +15,9 @@ public class NativeChicken extends Activity
     {
         super.onCreate(savedInstanceState);
         backend = new Backend();
-    }
 
-    public void jniCall(View view) {
-        backend.sendEvent("foo");
+	Log.d("foo", "do i actually wait?");
+	backend.sendEvent(Backend.ON_CREATE);
+	Log.d("foo", "hmm?");
     }
 }
