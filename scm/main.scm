@@ -10,19 +10,32 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
 }
 <#
 
-(define (handle-event backend)
-  (jprint (call (field backend 'eventQueue) 'poll)))
+(define backend-thread #f)
+(define (handle-event event)
+  (print "foof")
 
 
-(define-method (com.bevuta.androidChickenTest.Backend.main this) void
+(define-method (com.bevuta.androidChickenTest.Backend.main backend) void
   (print "hello from backend!")
+  
   (receive (in out) (create-pipe)
-    (set-field! this 'signalFd out)
+    (set-field! backend 'signalFd out)
     (let ((in* (open-input-file* in)))
+      (call (field backend 'lock) 'lock)
+      (call (field backend 'chickenReady) 'signal)
+      (call (field backend 'lock) 'unlock)
+
       (let loop ()
-        (thread-wait-for-i/o! in)
-        (read-char in*)
-	(handle-event this)
-        (loop)))))
+	(thread-wait-for-i/o! in)
+	
+	
+	(read-char in*)
+	(handle-event #f)
+	
+	(call (field backend 'lock) 'lock)
+	(call (field backend 'chickenReady) 'signal)
+	(call (field backend 'lock) 'unlock)
+
+        (loop))))))
 
 (return-to-host)
