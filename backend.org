@@ -75,6 +75,8 @@
      Also, it will get killed last when memory is low.
    - Because the Chicken Scheme main loop never returns
      local references are not garbage collected at all.
-   - The use of reflection doesnt seem to be a really big
-     performance hit but makes memory managment much
-     easier as it uses finalizers.
+   - The use of reflection will be mostly done at expansion-time
+     and so wont be a big hit in performance.
+   - Currently the jlambda api from the jni egg makes use of
+     finalizers for returned jobjects which may or may not
+     a performance hit.
