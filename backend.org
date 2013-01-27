@@ -1,54 +1,56 @@
 * Chicken Scheme Android Backend
-  The goal is to be able to implement an Android 
-  Activity with user interface in Chicken Scheme.
+  The goal is to be able to implement as much as possible of an
+  Android Activity with user interface in Chicken Scheme. The minimum
+  solution will allow to implement the backend (models, controllers,
+  networking, ...) in Chicken and have it interact with the native
+  user interface by means of callbacks.
 ** Problems
-   - Calls into Chicken must be done in same thread 
-     that initiated the Chicken Runtime.
-   - Starting Chicken on the main thread will make
-     concurrency in Chicken impossible or block
-     the main thread for that time.
-   - Starting Chicken in its own thread makes it
-     mandatory to implement syncronization.
-   - Access to UI elements must be done from the main
-     thread so we need syncronization in both directions.
+   - Calls into Chicken must be done in same thread that initiated the
+     Chicken runtime.
+   - Starting Chicken on the main thread will block the Chicken
+     runtime and its scheduler while control is outside of it.
+   - Starting Chicken in its own thread requires some sort of
+     synchronization when calling back into the Chicken runtime.
+   - Access to UI elements must be done from the main thread so we
+     need synchronization that direction, too, when calling into the
+     main thread from the Chicken runtime thread.
 ** Possible Solutions
-   - Running Chicken on its own thread seems like
-     the only way we can do this.
-   - An Activity in Java spawns a new thread for
-     our Chicken runtime and loads it there.
-   - After the runtime is intialized Java calls
-     an external function to start a main loop.
-   - The main loop will initialize a pipe, share
-     the file descriptor with the Java side and
-     uses thread-wait-for-i/o to wait for signal.
-   - If the Java side wants to run a callback
-     inside our Chicken Runtime it will move
-     information about that into some shared
-     memory and write into the Backend pipe.
-   - The call to signal the Chicken runtime 
-     blocks the JVM thread until the event is processed.
-   - The main loop will stop waiting and read
-     the char out of the pipe and read the
-     shared information about that event through
-     JNI from the JVM to dispatch the call.
-   - When the dispatched call returns the JVM
-     thread will be unblocked after the return
-     values are made accessible to the JVM.
-   - To access user interface elements we need
-     a similiar process to dispatch calls into
-     the main thread from Chicken.
-   - The idea is to implement an android.os.Handler
-     which implements methods that wraps around
-     java.lang.reflection stuff to be handled
-     on the main thread.
-   - If the Chicken Backend runtime want to
-     access some user interface objects it uses
-     ap specialized reflection api in Scheme
-     which uses the Handler methods.
-   - The main thread processes this call and
-     blocks the Chicken Backend Thread till its 
-     done and shares the return value through JNI
-     like it would the other way around.
+**** Interfacing from Java to Chicken (as implemented right now)
+     - Running Chicken runs on a separate native thread.
+     - An Activity written in Java spawns this thread
+       for our Chicken runtime and loads it there.
+     - After the runtime is intialized Java calls
+       an external function to start a main loop.
+     - The main loop will initialize a pipe, share the write end of it
+       with the Java side and waits for signals by calling
+       `thread-wait-for-i/o!` on the read end. This is called the
+       *signal pipe*.
+     - If the Java side wants to run a callback
+       inside our Chicken Runtime it will move
+       information about that into some shared
+       memory and write to its end of the signal pipe.
+     - The call to signal the Chicken runtime 
+       blocks the JVM thread until the event is processed.
+     - The main loop will stop waiting, clear
+       its end of the signal pipe and read the
+       shared information about that event through
+       JNI from the JVM to dispatch the call.
+     - When the dispatched call returns the JVM
+       thread will be unblocked after the return
+       values are made accessible to the JVM by
+       placing them in the area of shared memory.
+**** Interfacing from Chicken to Java (to be implemented)
+     - To access user interface elements we need a similiar process as
+       above to dispatch calls into the main thread from Chicken.
+     - The idea is to implement an android.os.Handler which implements
+       methods that wrap around java.lang.reflection stuff to be
+       handled on the main thread.
+     - If the Chicken Backend runtime wants to access some user
+       interface objects it uses the Java reflection API to call the
+       Handler's methods.
+     - The main thread processes this call and blocks the Chicken
+       Backend Thread till its done and shares the return value
+       through JNI like it would the other way around.
 
 ** Workflow
    - Each Activity will be declared in the
@@ -57,22 +59,22 @@
      the activity inside the Chicken runtime.
    - The actual code with the callbacks has to be
      implemented in a file named after that subclass.
-   - The Chicken Runtime will load the shared object
+   - The Chicken runtime will load the shared object
      with the callback definitions dynamically and
      dispatch calls as needed to them.
    - User interface elements will be defined in XML
      layout files used by the Android framework tools.
    
 ** Hints
-   - An Android Activity isnt meant as "always runs"
+   - An Android Activity isnt meant as an "always runs"
      application. The runtime will ask us to save our
      state or just kill our application when memory is
      needed for other things inside the runtime.
    - A Long living Android Service could be implemnted
-     in the same way and wont get asked to save his state.
-     also it will get killed last when memory is low.
+     in the same way and wont get asked to save its state.
+     Also, it will get killed last when memory is low.
    - Because the Chicken Scheme main loop never returns
      local references are not garbage collected at all.
    - The use of reflection doesnt seem to be a really big
-     hit performance wise and makes memory managment much 
-     more easily as it uses finalizers.
+     performance hit but makes memory managment much
+     easier as it uses finalizers.
