@@ -19,7 +19,7 @@
      - Running Chicken runs on a separate native thread.
      - An Activity written in Java spawns this thread
        for our Chicken runtime and loads it there.
-     - After the runtime is intialized Java calls
+     - After the runtime is initialized Java calls
        an external function to start a main loop.
      - The main loop will initialize a pipe, share the write end of it
        with the Java side and waits for signals by calling
@@ -70,7 +70,7 @@
      application. The runtime will ask us to save our
      state or just kill our application when memory is
      needed for other things inside the runtime.
-   - A Long living Android Service could be implemnted
+   - A Long living Android Service could be implemented
      in the same way and wont get asked to save its state.
      Also, it will get killed last when memory is low.
    - Because the Chicken Scheme main loop never returns
