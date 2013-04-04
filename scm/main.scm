@@ -1,7 +1,10 @@
-(use android-log posix srfi-18 jni jni-reflection
-     matchable)
+(use android-log posix srfi-18 jni matchable)
 
 (jni-init)
+
+(import-java-ns ((com.bevuta.androidChickenTest Backend)
+                 (java.util.concurrent.locks    (Lock Condition ReentrantLock))))
+
 #>
 void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *this) {
   jfieldID signalFdField = (*env)->GetFieldID(env, (*env)->GetObjectClass(env, this), "signalFd", "I");
@@ -13,7 +16,6 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
 
 (define this
   (make-parameter #f))
-
 
 (define (handle-event event)
   (let ((callback (hash-table-ref callbacks event)))
@@ -38,11 +40,13 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
 
 (define callback-counter
   (let ((x 0)) (lambda () (set! x (+ x 1)))))
+
 (define (register-callback name proc)
   (let ((callback-id (callback-counter))
-	(field-name  (string->symbol (string-append (symbol->string name) "CallbackId"))))
+        (field-name  (string->symbol (string-append (symbol->string name) "CallbackId"))))
     (hash-table-set! callbacks callback-id proc)
-    (set-field! (this) field-name callback-id)))
+    (set! ((jlambda-field-imple #f 'int 'Backend field-name) (this)) callback-id)))
+
 
 (define-method (com.bevuta.androidChickenTest.Backend.main backend) void
   (this backend)
@@ -58,23 +62,31 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
   (register-callback 'destroy destroy)
 
   (receive (in out) (create-pipe)
-    (set-field! backend 'signalFd out)
+    (set! ((jlambda-field #f int Backend signalFd) backend) out)
 
     (let ((in* (open-input-file* in)))
-      (call (field backend 'lock) 'lock)
-      (call (field backend 'chickenReady) 'signal)
-      (call (field backend 'lock) 'unlock)
 
-      (let loop ()
-	(thread-wait-for-i/o! in)
-		
-	(read-char in*)
-	(handle-event (field backend 'eventType))
-	
-	(call (field backend 'lock) 'lock)
-	(call (field backend 'chickenReady) 'signal)
-	(call (field backend 'lock) 'unlock)
+      (let ((lock             (jlambda-field #f Lock Backend lock))
+            (chicken-ready    (jlambda-field #f Condition Backend chickenReady))
+            (event-type       (jlambda-field #f int Backend eventType))
+            (Lock.lock        (jlambda-method #f void ReentrantLock lock))
+            (Condition.signal (jlambda-method #f void Condition signal))
+            (Lock.unlock      (jlambda-method #f void ReentrantLock unlock)))
 
-        (loop)))))
+        (Lock.lock (lock (this)))
+        (Condition.signal (chicken-ready (this)))
+        (Lock.unlock (lock (this)))
+
+        (let loop ()
+          (thread-wait-for-i/o! in)
+
+          (read-char in*)
+          (handle-event (event-type (this)))
+
+          (Lock.lock (lock (this)))
+          (Condition.signal (chicken-ready (this)))
+          (Lock.unlock (lock (this)))
+
+          (loop))))))
 
 (return-to-host)
