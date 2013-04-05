@@ -1,3 +1,14 @@
+(import-for-syntax jni)
+(use jni)
+
+;TODO: to be improved!
+(begin-for-syntax
+  (import-java-ns ((com.bevuta.androidChickenTest Backend) 
+                   (java.util.concurrent.locks    (Lock Condition ReentrantLock))))
+  (if (not (jni-env))
+    (jvm-init-lolevel "androidChickenTest/bin/classes:../android-chicken/target/data/data/com.bevuta.androidChickenTest/lib/chicken/6/jni-utils.jar"))
+  #f)
+
 (use android-log posix srfi-18 jni matchable)
 
 (jni-init)
@@ -62,14 +73,14 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
   (register-callback 'destroy destroy)
 
   (receive (in out) (create-pipe)
-    (set! ((jlambda-field #f int Backend signalFd) backend) out)
+    (set! ((jlambda Backend signalFd) backend) out)
 
     (let ((in* (open-input-file* in)))
 
-      (let ((lock             (jlambda-field #f Lock Backend lock))
-            (chicken-ready    (jlambda-field #f Condition Backend chickenReady))
-            (event-type       (jlambda-field #f int Backend eventType))
-            (Lock.lock        (jlambda-method #f void ReentrantLock lock))
+      (let ((lock             (jlambda Backend lock))
+            (chicken-ready    (jlambda Backend chickenReady))
+            (event-type       (jlambda Backend eventType))
+            (Lock.lock        (jlambda-method #f void ReentrantLock lock)) ;already not implemented
             (Condition.signal (jlambda-method #f void Condition signal))
             (Lock.unlock      (jlambda-method #f void ReentrantLock unlock)))
 
