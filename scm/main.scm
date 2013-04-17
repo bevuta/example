@@ -3,18 +3,12 @@
 
 ;TODO: to be improved!
 (begin-for-syntax
-  (import-java-ns ((com.bevuta.androidChickenTest Backend) 
-                   (java.util.concurrent.locks    (Lock Condition ReentrantLock))))
   (if (not (jni-env))
-    (jvm-init-lolevel "androidChickenTest/bin/classes:../android-chicken/target/data/data/com.bevuta.androidChickenTest/lib/chicken/6/jni-utils.jar"))
-  #f)
+    (jvm-init-lolevel "androidChickenTest/bin/classes:../android-chicken/target/data/data/com.bevuta.androidChickenTest/lib/chicken/6/jni-utils.jar")))
 
 (use android-log posix srfi-18 jni matchable)
 
 (jni-init)
-
-(import-java-ns ((com.bevuta.androidChickenTest Backend)
-                 (java.util.concurrent.locks    (Lock Condition ReentrantLock))))
 
 #>
 void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *this) {
@@ -56,10 +50,13 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
   (let ((callback-id (callback-counter))
         (field-name  (string->symbol (string-append (symbol->string name) "CallbackId"))))
     (hash-table-set! callbacks callback-id proc)
-    (set! ((jlambda-field-imple #f 'int 'Backend field-name) (this)) callback-id)))
-
+    (set! ((jlambda-field-imple #f 'int 'com.bevuta.androidChickenTest.Backend field-name) (this)) callback-id)))
 
 (define-method (com.bevuta.androidChickenTest.Backend.main backend) void
+  (jimport com.bevuta.androidChickenTest.Backend (prefix <> Backend-))
+  (jimport java.util.concurrent.locks.Condition (prefix <> Condition-))
+  (jimport java.util.concurrent.locks.ReentrantLock (prefix (only <> lock unlock) ReentrantLock-))
+
   (this backend)
   (print "hello from backend!")  
 
@@ -73,31 +70,24 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
   (register-callback 'destroy destroy)
 
   (receive (in out) (create-pipe)
-    (set! ((jlambda Backend signalFd) backend) out)
+    (set! (Backend-signalFd backend) out)
 
     (let ((in* (open-input-file* in)))
 
-      (let ((lock             (jlambda Backend lock))
-            (chicken-ready    (jlambda Backend chickenReady))
-            (event-type       (jlambda Backend eventType))
-            (Lock.lock        (jlambda-method #f void ReentrantLock lock)) ;already not implemented
-            (Condition.signal (jlambda-method #f void Condition signal))
-            (Lock.unlock      (jlambda-method #f void ReentrantLock unlock)))
-
-        (Lock.lock (lock (this)))
-        (Condition.signal (chicken-ready (this)))
-        (Lock.unlock (lock (this)))
+        (ReentrantLock-lock   (Backend-lock (this)))
+        (Condition-signal     (Backend-chickenReady (this)))
+        (ReentrantLock-unlock (Backend-lock (this)))
 
         (let loop ()
           (thread-wait-for-i/o! in)
 
           (read-char in*)
-          (handle-event (event-type (this)))
+          (handle-event (Backend-eventType (this)))
 
-          (Lock.lock (lock (this)))
-          (Condition.signal (chicken-ready (this)))
-          (Lock.unlock (lock (this)))
+          (ReentrantLock-lock   (Backend-lock (this)))
+          (Condition-signal     (Backend-chickenReady (this)))
+          (ReentrantLock-unlock (Backend-lock (this)))
 
-          (loop))))))
+          (loop)))))
 
 (return-to-host)
