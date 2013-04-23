@@ -1,9 +1,11 @@
 package com.bevuta.androidChickenTest;
 
-import android.app.Activity;
+import android.os.Handler;
+import android.os.Message;
 import android.os.Bundle;
 import android.util.Log;
 import java.util.concurrent.locks.*;
+import java.lang.reflect.Method;
 
 public class Backend implements Runnable
 {
@@ -50,6 +52,24 @@ public class Backend implements Runnable
   protected int    stopCallbackId;
   protected int destroyCallbackId;
 
+  public NativeChicken activity;
+
+  protected Handler handler = new Handler() {
+      @Override
+      public void handleMessage(Message msg) {
+        System.out.println("Processing message");
+        Class<?> clazz = NativeChicken.class;
+        Class<?>[] signature = (Class<?>[]) msg.getData().getSerializable("signature");
+        String methodName =  msg.getData().getString("methodName");
+        try {
+          Method m = clazz.getMethod(methodName, signature);
+          System.out.println(m);
+          m.invoke(activity);
+        } catch (Exception e) {
+          //TODO
+        }
+      }
+  };
 
   public Backend() {       
     thread = new Thread(this);
