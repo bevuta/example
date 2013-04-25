@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 
 public class Backend implements Runnable
 {
+  private static final String TAG = "Backend";
   public enum ReturnValueType { VOID, BYTE, CHAR, SHORT, INT, LONG, DOUBLE, FLOAT, OBJECT}	
 
   public static class ReturnValue {
@@ -57,16 +58,15 @@ public class Backend implements Runnable
   protected Handler handler = new Handler() {
       @Override
       public void handleMessage(Message msg) {
-        System.out.println("Processing message");
-        Class<?> clazz = NativeChicken.class;
+        Log.d(TAG, "Processing message");
+        Class<?> clazz = (Class<?>) msg.getData().getSerializable("class");
         Class<?>[] signature = (Class<?>[]) msg.getData().getSerializable("signature");
         String methodName =  msg.getData().getString("methodName");
         try {
           Method m = clazz.getMethod(methodName, signature);
-          System.out.println(m);
           m.invoke(activity);
         } catch (Exception e) {
-          //TODO
+          Log.e(TAG, "Handler error", e);
         }
       }
   };

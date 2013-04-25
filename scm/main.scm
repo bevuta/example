@@ -1,3 +1,9 @@
+;; FIXME: this is needed for some reason
+(define %##sys#find-extension ##sys#find-extension)
+(define (##sys#find-extension p inc?)
+  (or (%##sys#find-extension p inc?)
+      (%##sys#find-extension (string-append "lib" p) inc?)))
+
 (import-for-syntax jni)
 (use jni)
 
@@ -6,9 +12,27 @@
   (if (not (jni-env))
     (jvm-init-lolevel "androidChickenTest/bin/classes:../android-chicken/target/data/data/com.bevuta.androidChickenTest/lib/chicken/6/jni-utils.jar:/opt/android-sdk/platforms/android-14/android.jar")))
 
-(use android-log posix srfi-18 jni matchable)
+(use android-log posix srfi-18 matchable)
 
 (jni-init)
+
+(define-foreign-variable JNI_VERSION_1_6 int)
+
+(define get-jvm (foreign-lambda* (c-pointer void) ()
+                  "C_return(jvm);"))
+
+(define (get-env)
+  (let-location ((env (c-pointer void)))
+                (jvm-env (get-jvm) (location env) JNI_VERSION_1_6)
+                env))
+
+(jni-env (get-env))
+(jimport java.util.concurrent.locks.ReentrantLock (prefix (only <> lock unlock) ReentrantLock-))
+(jimport android.os.Message (prefix <> Message-))
+(jimport android.os.Handler (prefix <> Handler-))
+(jimport com.bevuta.androidChickenTest.Backend (prefix <> Backend-))
+;(jimport android.os.Bundle (prefix <> Bundle-))
+;(jimport java.util.concurrent.locks.Condition (prefix <> Condition-))
 
 #>
 void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *this) {
@@ -53,30 +77,20 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
     (set! ((jlambda-field-imple #f 'int 'com.bevuta.androidChickenTest.Backend field-name) (this)) callback-id)))
 
 (define (on-click-callback)
-  (jimport android.os.Handler (prefix <> Handler-))
-  (jimport android.os.Message (prefix <> Message-))
-  (jimport com.bevuta.androidChickenTest.Backend (prefix <> Backend-))
-  ;(jimport android.os.Bundle (prefix <> Bundle-))
-
-  (let* (
-         (Bundle-new (jlambda-constructor android.os.Bundle))
+  (let* ((Bundle-new (jlambda-constructor android.os.Bundle))
          (Bundle-putSerializable (jlambda android.os.Bundle putSerializable))
          (Bundle-putString (jlambda android.os.Bundle putString))
          ;(int-class (jlambda-field (static) java.lang.Class java.lang.Integer TYPE))
          (signature (list->array (class java.lang.Class) (list)))
          (msg       (Message-new))
          (bundle    (Bundle-new)))
-    ;(Bundle-putSerializable bundle "class" (class java.lang.String))
+    (Bundle-putSerializable bundle "class" (class com.bevuta.androidChickenTest.NativeChicken))
     (Bundle-putSerializable bundle "signature" signature)
     (Bundle-putString bundle "methodName" "randomChange")
     (Message-setData msg bundle)
     (Handler-sendMessage (Backend-handler (this)) msg)))
 
-
 (define-method (com.bevuta.androidChickenTest.Backend.main backend) void
-  (jimport com.bevuta.androidChickenTest.Backend (prefix <> Backend-))
-  ;(jimport java.util.concurrent.locks.Condition (prefix <> Condition-))
-  (jimport java.util.concurrent.locks.ReentrantLock (prefix (only <> lock unlock) ReentrantLock-))
 
   (this backend)
   (print "hello from backend!")  
