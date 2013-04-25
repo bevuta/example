@@ -33,6 +33,7 @@
 (jimport com.bevuta.androidChickenTest.Backend (prefix <> Backend-))
 ;(jimport android.os.Bundle (prefix <> Bundle-))
 ;(jimport java.util.concurrent.locks.Condition (prefix <> Condition-))
+(set-gc-report! 1)
 
 #>
 void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *this) {
