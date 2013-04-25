@@ -33,6 +33,10 @@
 (jimport com.bevuta.androidChickenTest.Backend (prefix <> Backend-))
 ;(jimport android.os.Bundle (prefix <> Bundle-))
 ;(jimport java.util.concurrent.locks.Condition (prefix <> Condition-))
+(define Bundle-new (jlambda-constructor android.os.Bundle))
+(define Bundle-putSerializable (jlambda android.os.Bundle putSerializable))
+(define Bundle-putString (jlambda android.os.Bundle putString))
+
 (set-gc-report! 1)
 
 #>
@@ -78,10 +82,7 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
     (set! ((jlambda-field-imple #f 'int 'com.bevuta.androidChickenTest.Backend field-name) (this)) callback-id)))
 
 (define (on-click-callback)
-  (let* ((Bundle-new (jlambda-constructor android.os.Bundle))
-         (Bundle-putSerializable (jlambda android.os.Bundle putSerializable))
-         (Bundle-putString (jlambda android.os.Bundle putString))
-         ;(int-class (jlambda-field (static) java.lang.Class java.lang.Integer TYPE))
+  (let* (;(int-class (jlambda-field (static) java.lang.Class java.lang.Integer TYPE))
          (signature (list->array (class java.lang.Class) (list)))
          (msg       (Message-new))
          (bundle    (Bundle-new)))
