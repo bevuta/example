@@ -36,6 +36,7 @@
 (define Bundle-new (jlambda-constructor android.os.Bundle))
 (define Bundle-putSerializable (jlambda android.os.Bundle putSerializable))
 (define Bundle-putString (jlambda android.os.Bundle putString))
+(define Condition-signal (jlambda java.util.concurrent.locks.Condition signal))
 
 (set-gc-report! 1)
 
@@ -107,26 +108,25 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
   (register-callback 'destroy destroy)
   (hash-table-set! callbacks 5000 on-click-callback)
 
-  (let ((Condition-signal (jlambda java.util.concurrent.locks.Condition signal)))
-    (receive (in out) (create-pipe)
-      (set! (Backend-signalFd backend) out)
+  (receive (in out) (create-pipe)
+    (set! (Backend-signalFd backend) out)
 
-      (let ((in* (open-input-file* in)))
+    (let ((in* (open-input-file* in)))
+
+      (ReentrantLock-lock   (Backend-lock (this)))
+      (Condition-signal     (Backend-chickenReady (this)))
+      (ReentrantLock-unlock (Backend-lock (this)))
+
+      (let loop ()
+        (thread-wait-for-i/o! in)
+
+        (read-char in*)
+        (handle-event (Backend-eventType (this)))
 
         (ReentrantLock-lock   (Backend-lock (this)))
         (Condition-signal     (Backend-chickenReady (this)))
         (ReentrantLock-unlock (Backend-lock (this)))
 
-        (let loop ()
-          (thread-wait-for-i/o! in)
-
-          (read-char in*)
-          (handle-event (Backend-eventType (this)))
-
-          (ReentrantLock-lock   (Backend-lock (this)))
-          (Condition-signal     (Backend-chickenReady (this)))
-          (ReentrantLock-unlock (Backend-lock (this)))
-
-          (loop))))))
+        (loop)))))
 
 (return-to-host)
