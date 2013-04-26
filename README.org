@@ -11,9 +11,6 @@
     - jni - https://github.com/chicken-mobile/jni -
       JNI is the interface used to share data betweewn Java and Chicken.
       it gives us the ability to access memory methods in the JVM.
-    - jni-reflection - https://github.com/chicken-mobile/jni/tree/master/reflection -
-      With the use of reflection the access to the JVM will be eased it makes
-      use of the stuff in java.lang.reflect to dwim.
     - android-log - https://github.com/chicken-mobile/android-ndk/tree/master/android-log -
       Normally an Activity got no stdin and stdout instead Android uses its own
       logging facility. By loading this egg current-input-port and current-output-port
