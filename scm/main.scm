@@ -1,18 +1,16 @@
-;; FIXME: this is needed for some reason
 (define %##sys#find-extension ##sys#find-extension)
 (define (##sys#find-extension p inc?)
   (or (%##sys#find-extension p inc?)
       (%##sys#find-extension (string-append "lib" p) inc?)))
 
+(use android-log)
 (import-for-syntax jni)
-(use jni)
+(use jni posix srfi-18 matchable)
 
 ;TODO: to be improved!
 (begin-for-syntax
-  (if (not (jni-env))
-    (jvm-init-lolevel "androidChickenTest/bin/classes:../android-chicken/target/data/data/com.bevuta.androidChickenTest/lib/chicken/6/jni-utils.jar:/opt/android-sdk/platforms/android-14/android.jar")))
-
-(use android-log posix srfi-18 matchable)
+ (if (not (jni-env))
+     (jvm-init-lolevel "androidChickenTest/bin/classes:../android-chicken/build/target/data/data/com.bevuta.androidChickenTest/lib/chicken/7/jni-utils.jar:/opt/google/android/sdk/platforms/android-14/android.jar")))
 
 (jni-init)
 
