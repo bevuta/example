@@ -37,7 +37,7 @@ $(PWD)/$(NAME)/libs/$(ARCH)/lib%.so: $(CHICKEN_TARGET_EGGS_PATH)/%.so
 	cp $< $@
 
 $(PWD)/$(NAME)/libs/$(ARCH)/lib%.so: $(PWD)/scm/%.scm
-	ant -f  $(PACKAGE_NAME)/build.xml debug
+	ant -f  $(NAME)/build.xml debug
 	android-csc -s -llog -landroid -I$(PWD)/scm/include -o $@ $<
 
 $(PWD)/$(NAME)/libs/$(ARCH):
