@@ -21,22 +21,16 @@
 (define get-jvm (foreign-lambda* (c-pointer void) ()
                   "C_return(jvm);"))
 
-(define (get-env)
-  (let-location ((env (c-pointer void)))
-                (jvm-env (get-jvm) (location env) JNI_VERSION_1_6)
-                env))
+(let-location ((env (c-pointer void)))
+              (jvm-env (get-jvm) (location env) JNI_VERSION_1_6)
+              (jni-env env))
 
-(jni-env (get-env))
 (jimport java.util.concurrent.locks.ReentrantLock (prefix (only <> lock unlock) ReentrantLock-))
 (jimport android.os.Message (prefix <> Message-))
 (jimport android.os.Handler (prefix <> Handler-))
 (jimport com.bevuta.androidChickenTest.Backend (prefix <> Backend-))
-;(jimport android.os.Bundle (prefix <> Bundle-))
-;(jimport java.util.concurrent.locks.Condition (prefix <> Condition-))
-(define Bundle-new (jlambda-constructor android.os.Bundle))
-(define Bundle-putSerializable (jlambda android.os.Bundle putSerializable))
-(define Bundle-putString (jlambda android.os.Bundle putString))
-(define Condition-signal (jlambda java.util.concurrent.locks.Condition signal))
+(jimport android.os.Bundle (prefix <> Bundle-))
+(jimport java.util.concurrent.locks.Condition (prefix <> Condition-))
 
 (set-gc-report! 1)
 
@@ -83,8 +77,7 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
     (set! ((jlambda-field-imple #f 'int 'com.bevuta.androidChickenTest.Backend field-name) (this)) callback-id)))
 
 (define (on-click-callback)
-  (let* (;(int-class (jlambda-field (static) java.lang.Class java.lang.Integer TYPE))
-         (signature (list->array (class java.lang.Class) (list)))
+  (let* ((signature (list->array (class java.lang.Class) (list)))
          (msg       (Message-new))
          (bundle    (Bundle-new)))
     (Bundle-putSerializable bundle "class" (class com.bevuta.androidChickenTest.NativeChicken))
@@ -97,8 +90,6 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
 
   (this backend)
   (print "hello from backend!")  
-
-  (set-gc-report! #t)
 
   (register-callback 'create  create)
   (register-callback 'start   start)
@@ -126,7 +117,7 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
         (ReentrantLock-lock   (Backend-lock (this)))
         (Condition-signal     (Backend-chickenReady (this)))
         (ReentrantLock-unlock (Backend-lock (this)))
-
+        (gc #t)
         (loop)))))
 
 (return-to-host)
