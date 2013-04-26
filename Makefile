@@ -1,19 +1,11 @@
 PWD=$(shell pwd)
 
-CHICKEN_PATH             = $(PWD)/../chicken-android
-CHICKEN_HOST_PATH        = $(CHICKEN_PATH)/host
-CHICKEN_TARGET_PATH      = $(CHICKEN_PATH)/target/data/data/$(PACKAGE)
-CHICKEN_TARGET_EGGS_PATH = $(CHICKEN_TARGET_PATH)/lib/chicken/6
+CHICKEN_PATH             = ../android-chicken
+include $(CHICKEN_PATH)/config.mk
 
-SDK_PATH     = /opt/google/android/sdk
-NDK_PATH     = /opt/google/android/ndk
-
-ARCH     = armeabi
-PLATFORM = android-14
-TARGET   = 11
-NAME     = androidChickenTest
-PACKAGE  = com.bevuta.androidChickenTest
-ACTIVITY = NativeChicken
+CHICKEN_HOST_PATH        = $(CHICKEN_PATH)/build/host
+CHICKEN_TARGET_PATH      = $(CHICKEN_PATH)/build/target/data/data/$(PACKAGE_NAME)
+CHICKEN_TARGET_EGGS_PATH = $(CHICKEN_TARGET_PATH)/lib/chicken/7
 
 export PATH := $(SDK_PATH)/platform-tools:$(SDK_PATH)/tools:$(PATH)
 export PATH := $(SDK_PATH)/tools:$(PATH)
@@ -26,11 +18,11 @@ all: run
 
 run: install
 	cd $(NAME); ant debug install
-	adb shell am start -n $(PACKAGE)/.$(ACTIVITY)
+	adb shell am start -n $(PACKAGE_NAME)/.$(ACTIVITY)
 
 run*: install
-	adb shell killall $(PACKAGE)
-	adb shell am start -n $(PACKAGE)/.$(ACTIVITY)
+	adb shell killall $(PACKAGE_NAME)
+	adb shell am start -n $(PACKAGE_NAME)/.$(ACTIVITY)
 
 install: $(PWD)/$(NAME)/ $(PWD)/$(NAME)/libs/$(ARCH) $(PWD)/$(NAME)/libs/$(ARCH)/libchicken.so \
 		$(foreach egg-path,$(shell ls $(CHICKEN_TARGET_EGGS_PATH)/*.so), \
@@ -45,7 +37,8 @@ $(PWD)/$(NAME)/libs/$(ARCH)/lib%.so: $(CHICKEN_TARGET_EGGS_PATH)/%.so
 	cp $< $@
 
 $(PWD)/$(NAME)/libs/$(ARCH)/lib%.so: $(PWD)/scm/%.scm
-	csc -s -llog -landroid -I$(PWD)/scm/include -o $@ $<
+	ant -f  $(PACKAGE_NAME)/build.xml debug
+	android-csc -s -llog -landroid -I$(PWD)/scm/include -o $@ $<
 
 $(PWD)/$(NAME)/libs/$(ARCH):
 	mkdir -p $@
