@@ -44,4 +44,5 @@ $(PWD)/$(NAME)/libs/$(ARCH):
 	mkdir -p $@
 
 clean:
-	rm -rf $(NAME)
+	 ant -f $(NAME)/build.xml clean
+	 rm -rf androidChickenTest/libs/armeabi/*.so scm/*.so androidChickenTest/bin
