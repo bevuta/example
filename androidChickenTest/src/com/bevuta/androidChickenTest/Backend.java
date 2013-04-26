@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.util.Log;
 import java.util.concurrent.locks.*;
 import java.lang.reflect.Method;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Backend implements Runnable
 {
@@ -54,6 +55,7 @@ public class Backend implements Runnable
   protected int destroyCallbackId;
 
   public NativeChicken activity;
+  public ConcurrentLinkedQueue<MethodArguments> argumentsQueue = new ConcurrentLinkedQueue<MethodArguments>();
 
   protected Handler handler = new Handler() {
       @Override
@@ -64,7 +66,12 @@ public class Backend implements Runnable
         String methodName =  msg.getData().getString("methodName");
         try {
           Method m = clazz.getMethod(methodName, signature);
-          m.invoke(activity);
+          MethodArguments args = argumentsQueue.poll();
+          if (args == null) {
+            Log.e(TAG, "MethodArguments not found");
+          } else {
+            m.invoke(args.receiver, args.args);
+          }
         } catch (Exception e) {
           Log.e(TAG, "Handler error", e);
         }

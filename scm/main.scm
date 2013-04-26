@@ -25,12 +25,14 @@
               (jvm-env (get-jvm) (location env) JNI_VERSION_1_6)
               (jni-env env))
 
+(jimport com.bevuta.androidChickenTest.Backend (prefix <> Backend-))
+(jimport com.bevuta.androidChickenTest.MethodArguments (prefix <> MethodArguments-))
 (jimport java.util.concurrent.locks.ReentrantLock (prefix (only <> lock unlock) ReentrantLock-))
+(jimport java.util.concurrent.locks.Condition (prefix <> Condition-))
+(jimport java.util.concurrent.ConcurrentLinkedQueue (prefix <> Queue-))
 (jimport android.os.Message (prefix <> Message-))
 (jimport android.os.Handler (prefix <> Handler-))
-(jimport com.bevuta.androidChickenTest.Backend (prefix <> Backend-))
 (jimport android.os.Bundle (prefix <> Bundle-))
-(jimport java.util.concurrent.locks.Condition (prefix <> Condition-))
 
 (set-gc-report! 1)
 
@@ -76,15 +78,20 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
     (hash-table-set! callbacks callback-id proc)
     (set! ((jlambda-field-imple #f 'int 'com.bevuta.androidChickenTest.Backend field-name) (this)) callback-id)))
 
-(define (on-click-callback)
+(define (send-invoke-msg clazz method-name instance args)
   (let* ((signature (list->array (class java.lang.Class) (list)))
          (msg       (Message-new))
-         (bundle    (Bundle-new)))
-    (Bundle-putSerializable bundle "class" (class com.bevuta.androidChickenTest.NativeChicken))
+         (bundle    (Bundle-new))
+         (args      (MethodArguments-new instance (list->array (class java.lang.Object) args))))
+    (Bundle-putSerializable bundle "class" clazz)
     (Bundle-putSerializable bundle "signature" signature)
-    (Bundle-putString bundle "methodName" "randomChange")
+    (Bundle-putString bundle "methodName" method-name)
     (Message-setData msg bundle)
+    (Queue-add (Backend-argumentsQueue (this)) args)
     (Handler-sendMessage (Backend-handler (this)) msg)))
+
+(define (on-click-callback)
+  (send-invoke-msg (class com.bevuta.androidChickenTest.NativeChicken) "randomChange" (Backend-activity (this)) '()))
 
 (define-method (com.bevuta.androidChickenTest.Backend.main backend) void
 
