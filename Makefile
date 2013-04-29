@@ -36,9 +36,15 @@ $(PWD)/$(NAME)/libs/$(ARCH)/libchicken.so: $(CHICKEN_TARGET_PATH)/lib/libchicken
 $(PWD)/$(NAME)/libs/$(ARCH)/lib%.so: $(CHICKEN_TARGET_EGGS_PATH)/%.so
 	cp $< $@
 
-$(PWD)/$(NAME)/libs/$(ARCH)/lib%.so: $(PWD)/scm/%.scm
+$(PWD)/$(NAME)/libs/$(ARCH)/lib%.so: $(PWD)/scm/%.scm $(PWD)/scm/include/settings.scm
 	ant -f  $(NAME)/build.xml debug
-	android-csc -s -llog -landroid -I$(PWD)/scm/include -o $@ $<
+	android-csc -s -llog -X $(PWD)/scm/include/settings.scm -landroid -I$(PWD)/scm/include -o $@ $<
+
+$(PWD)/scm/include/settings.scm: $(CHICKEN_PATH)/config.mk make-settings.scm
+	mkdir -p $(PWD)/scm/include
+	csi -s make-settings.scm \
+		"SDK_PATH=$(SDK_PATH)" \
+		>$@
 
 $(PWD)/$(NAME)/libs/$(ARCH):
 	mkdir -p $@
