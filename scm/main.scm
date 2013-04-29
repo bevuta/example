@@ -4,6 +4,7 @@
       (%##sys#find-extension (string-append "lib" p) inc?)))
 
 (use android-log)
+(enable-gc-logging #t)
 (import-for-syntax jni)
 (use jni posix srfi-18 matchable)
 
