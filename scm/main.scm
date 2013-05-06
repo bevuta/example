@@ -1,5 +1,3 @@
-(include "settings.scm")
-
 (define %find-extension ##sys#find-extension)
 (set! ##sys#find-extension
   (lambda (p inc?)
