@@ -1,16 +1,26 @@
-(define %##sys#find-extension ##sys#find-extension)
-(define (##sys#find-extension p inc?)
-  (or (%##sys#find-extension p inc?)
-      (%##sys#find-extension (string-append "lib" p) inc?)))
+(include "settings.scm")
+
+(define %find-extension ##sys#find-extension)
+(set! ##sys#find-extension
+  (lambda (p inc?)
+    (or (%find-extension p inc?)
+	(%find-extension (string-append "lib" p) inc?))))
 
 (use android-log)
+(enable-gc-logging #t)
 (import-for-syntax jni)
 (use jni posix srfi-18 matchable concurrent-native-callbacks)
 
 ;TODO: to be improved!
 (begin-for-syntax
  (if (not (jni-env))
-     (jvm-init-lolevel "androidChickenTest/bin/classes:../android-chicken/build/target/data/data/com.bevuta.androidChickenTest/lib/chicken/7/jni-utils.jar:/opt/google/android/sdk/platforms/android-14/android.jar")))
+     (jvm-init-lolevel
+      (string-join
+       (list
+	"androidChickenTest/bin/classes"
+	"../android-chicken/build/target/data/data/com.bevuta.androidChickenTest/lib/chicken/7/jni-utils.jar"
+	(string-append SDK_PATH "/platforms/android-14/android.jar"))
+       ":"))))
 
 (jni-init)
 
