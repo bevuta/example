@@ -36,23 +36,19 @@ public class Backend implements Runnable
     }
   }
 
-  public static final int ON_CREATE = 0;
-  public int eventType;
-
-  private int signalFd;
   private native void main();
-  private native void signal();
+  private native void signalToScheme(int eventcode);
 
   private Thread thread;
   private final Lock lock = new ReentrantLock();
   private final Condition chickenReady  = lock.newCondition(); 
 
-  protected int  createCallbackId;
-  protected int   startCallbackId;
-  protected int  resumeCallbackId;
-  protected int   pauseCallbackId;
-  protected int    stopCallbackId;
-  protected int destroyCallbackId;
+  public int  createCallbackId;
+  public int   startCallbackId;
+  public int  resumeCallbackId;
+  public int   pauseCallbackId;
+  public int    stopCallbackId;
+  public int destroyCallbackId;
 
   public NativeChicken activity;
   public ConcurrentLinkedQueue<MethodArguments> argumentsQueue = new ConcurrentLinkedQueue<MethodArguments>();
@@ -92,17 +88,7 @@ public class Backend implements Runnable
   }
 
   public void sendEvent(int e) {
-    try{	    
-      lock.lock();
-
-      eventType = e;
-      signal();
-
-      chickenReady.await();
-    } catch (InterruptedException exn){
-    } finally {
-      lock.unlock();
-    }
+    signalToScheme(e);
   }
 
   public void run() {

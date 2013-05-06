@@ -5,7 +5,7 @@
 
 (use android-log)
 (import-for-syntax jni)
-(use jni posix srfi-18 matchable)
+(use jni posix srfi-18 matchable concurrent-native-callbacks)
 
 ;TODO: to be improved!
 (begin-for-syntax
@@ -32,19 +32,26 @@
 (jimport android.os.Handler (prefix <> Handler-))
 (jimport android.os.Bundle (prefix <> Bundle-))
 
-(set-gc-report! 1)
+(set-gc-report! #t)
 
 #>
-void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *this) {
-  jfieldID signalFdField = (*env)->GetFieldID(env, (*env)->GetObjectClass(env, this), "signalFd", "I");
-  int fd = (*env)->GetIntField(env, this, signalFdField);
-  write(fd, "x", 1);
-  return;
+void Java_com_bevuta_androidChickenTest_Backend_signalToScheme(JNIEnv *env, jobject *this, int eventcode) {
+  signal_to_scheme(eventcode);
 }
 <#
 
 (define this
   (make-parameter #f))
+
+(define global-this #f)
+
+(define-synchronous-concurrent-native-callback (signal_to_scheme (int eventcode)) int
+  (this global-this)
+  (print "I got signal number " eventcode)
+  (call/cc 
+    (lambda (k)
+      (with-exception-handler (lambda (x) (k -1))
+                              (lambda () (handle-event eventcode) 0)))))
 
 (define (handle-event event)
   (let ((callback (hash-table-ref callbacks event)))
@@ -89,11 +96,13 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
     (Handler-sendMessage (Backend-handler (this)) msg)))
 
 (define (on-click-callback)
-  (send-invoke-msg (class com.bevuta.androidChickenTest.NativeChicken) "randomChange" (Backend-activity (this)) '()))
+  (let ((clazz (class com.bevuta.androidChickenTest.NativeChicken)))
+    (send-invoke-msg clazz "randomChange" (Backend-activity (this)) '())))
 
 (define-method (com.bevuta.androidChickenTest.Backend.main backend) void
 
   (this backend)
+  (set! global-this backend)
   (print "hello from backend!")  
 
   (register-callback 'create  create)
@@ -104,25 +113,10 @@ void Java_com_bevuta_androidChickenTest_Backend_signal(JNIEnv *env, jobject *thi
   (register-callback 'destroy destroy)
   (hash-table-set! callbacks 5000 on-click-callback)
 
-  (receive (in out) (create-pipe)
-    (set! (Backend-signalFd backend) out)
-
-    (let ((in* (open-input-file* in)))
-
-      (ReentrantLock-lock   (Backend-lock (this)))
-      (Condition-signal     (Backend-chickenReady (this)))
-      (ReentrantLock-unlock (Backend-lock (this)))
-
-      (let loop ()
-        (thread-wait-for-i/o! in)
-
-        (read-char in*)
-        (handle-event (Backend-eventType (this)))
-
-        (ReentrantLock-lock   (Backend-lock (this)))
-        (Condition-signal     (Backend-chickenReady (this)))
-        (ReentrantLock-unlock (Backend-lock (this)))
-        (gc #t)
-        (loop)))))
+  (ReentrantLock-lock   (Backend-lock (this)))
+  (Condition-signal     (Backend-chickenReady (this)))
+  (ReentrantLock-unlock (Backend-lock (this)))
+  
+  (dispatch))
 
 (return-to-host)
