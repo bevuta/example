@@ -12,13 +12,11 @@ public class NativeChicken extends Activity
 {
   public Backend backend = new Backend();
 
-  private final int clickEventId = 5000;
-
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     backend.activity = this;
-    backend.sendEvent(backend.createCallbackId);
+    backend.onCreate();
     setContentView(R.layout.main);
 
     Button button = (Button)findViewById(R.id.button1);
@@ -39,26 +37,30 @@ public class NativeChicken extends Activity
   @Override
   protected void onStart() {
     super.onStart();
-    backend.sendEvent(backend.startCallbackId);
+    backend.onStart();
   }
+
   @Override
   protected void onResume() {
     super.onResume();
-    backend.sendEvent(backend.resumeCallbackId);
+    backend.onResume();
   }
+
   @Override
   protected void onPause() {
     super.onPause();
-    backend.sendEvent(backend.pauseCallbackId);
+    backend.onPause();
   }
+
   @Override
   protected void onStop() {
     super.onStop();
-    backend.sendEvent(backend.stopCallbackId);
+    backend.onStop();
   }
+
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    backend.sendEvent(backend.destroyCallbackId);
+    backend.onDestroy();
   }
 }

@@ -61,15 +61,14 @@
              (class                   (cadr x))
              (name                    (caddr x))
              (args                    (cadddr x))
-             (return-type             (car (cddddr x)))
-             (body                    (cdr (cddddr x)))
+             (body                    (cddddr x))
              (native-name             (symbol-append name '_native))
              (native-args             (map (lambda (arg)
                                              (if (member (car arg) '(jclass jobject))
                                                (cons '(c-pointer void) (cdr arg))
                                                arg)) args)))
         `(begin
-           (,%define-native-callback (,native-name ,@native-args) ,return-type
+           (,%define-native-callback (,native-name ,@native-args) int
              ,@body)
            (,%foreign-declare ,(generate-callback class name args)))))))
 

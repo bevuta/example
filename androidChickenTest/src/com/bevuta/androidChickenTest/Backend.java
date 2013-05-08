@@ -14,19 +14,17 @@ public class Backend implements Runnable
   private static final String TAG = "Backend";
 
   private native void main();
-  private native void signal(int eventcode);
-  private native void onClickCallback(View view, int i);
+  public native void onCreate();
+  public native void onStart();
+  public native void onResume();
+  public native void onPause();
+  public native void onStop();
+  public native void onDestroy();
+  public native void onClick(View view);
 
   private Thread thread;
   private final Lock lock = new ReentrantLock();
   private final Condition chickenReady  = lock.newCondition(); 
-
-  public int  createCallbackId;
-  public int   startCallbackId;
-  public int  resumeCallbackId;
-  public int   pauseCallbackId;
-  public int    stopCallbackId;
-  public int destroyCallbackId;
 
   public NativeChicken activity;
   public ConcurrentLinkedQueue<MethodArguments> argumentsQueue = new ConcurrentLinkedQueue<MethodArguments>();
@@ -63,14 +61,6 @@ public class Backend implements Runnable
     } finally {
       lock.unlock();
     }
-  }
-
-  public void sendEvent(int e) {
-    signal(e);
-  }
-
-  public void onClick(View v) {
-    onClickCallback(v, 1);
   }
 
   public void run() {
