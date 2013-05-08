@@ -5,7 +5,7 @@
 	(%find-extension (string-append "lib" p) inc?))))
 
 (use android-log)
-(import-for-syntax jni chicken scheme)
+(import-for-syntax jni chicken scheme matchable)
 (use jni posix srfi-18 matchable concurrent-native-callbacks)
 
 (use expand-full)
@@ -26,14 +26,16 @@
       (with-exception-handler (lambda (x) (k -1))
                               (lambda () 
                                 (thunk)
+                                (gc #t)
                                 0)))))
 
 ;; generates a native implementation of the java callback method
 ;; ie: void Java_com.bevuta.androidChickenTest.Backend_onClickCallback(...) 
 ;; for each of the jobject parameters a new global ref is created, and then
 ;; the rigth cncb callback is invoked.
-(define-for-syntax (generate-callback class name args)
-  (let ((class-name  (string-map! (lambda (c)
+(define-for-syntax (generate-callback r class name args)
+  (let ((%foreign-declare (r 'foreign-declare))
+        (class-name  (string-map! (lambda (c)
                                     (if (eq? c #\.)
                                       #\_
                                       c)) (symbol->string class)))
@@ -44,43 +46,49 @@
                                                    (string-append "jobject* " (symbol->string (cadr arg)))
                                                    (string-append (symbol->string (car arg)) " " (symbol->string (cadr arg)))))
                                                args)) ", ")))
-    (with-output-to-string
-      (lambda () 
-        (printf "void Java_~a_~a(~a)" class-name (symbol->string name) params)
-        (printf "{")
-        (for-each (lambda (arg i)
-                    (if (eq? (car arg) 'jobject)
-                      (printf "jobject __arg_~a = (*env)->NewWeakGlobalRef(env, ~a);" i (cadr arg))
-                      (printf "~a      __arg_~a = ~a;" (car arg) i (cadr arg)))) 
-                  args 
-                  (iota (length args)))
-        (printf "~a(~a);" native-name (string-join (map (cut format "__arg_~a" <>) (iota (length args))) ", "))
-        (for-each (lambda (arg i)
-                    (if (eq? (car arg) 'jobject)
-                      (printf "(*env)->DeleteWeakGlobalRef(env, __arg_~a);" i)))
-                  args
-                  (iota (length args)))
-        (printf "}")))))
+    `(,%foreign-declare
+       ,(with-output-to-string
+          (lambda () 
+            (printf "void Java_~a_~a(~a)" class-name (symbol->string name) params)
+            (printf "{")
+            (for-each (lambda (arg i)
+                        (if (eq? (car arg) 'jobject)
+                          (printf "jobject __arg_~a = (*env)->NewWeakGlobalRef(env, ~a);" i (cadr arg))
+                          (printf "~a __arg_~a = ~a;" (car arg) i (cadr arg)))) 
+                      args 
+                      (iota (length args)))
+            (printf "int __result = ~a(~a);" native-name (string-join (map (cut format "__arg_~a" <>) (iota (length args))) ", "))
+            (printf "if (__result != 0) {")
+            (printf "  jclass exClass = (*env)->FindClass(env, \"java/lang/RuntimeException\");")
+            (printf "  (*env)->ThrowNew(env, exClass, \"Callback error\");")
+            (printf "} else {")
+            (for-each (lambda (arg i)
+                        (if (eq? (car arg) 'jobject)
+                          (printf "(*env)->DeleteWeakGlobalRef(env, __arg_~a);" i)))
+                      args
+                      (iota (length args)))
+            (printf "}")
+            (printf "}"))))))
+
+(define-for-syntax (generate-native-callback r name args body)
+  (let* ((%define-native-callback (r 'define-synchronous-concurrent-native-callback))
+         (%execute-callback       (r 'execute-callback))
+         (native-args             (map (lambda (arg)
+                                         (if (eq? (car arg) 'jobject)
+                                           (cons '(c-pointer void) (cdr arg))
+                                           arg)) 
+                                       args)))
+    `(,%define-native-callback (,(symbol-append name '_native) ,@native-args) int
+                             (,%execute-callback (lambda () ,@body)))))
 
 (define-syntax define-callback 
   (er-macro-transformer
     (lambda (x r c)
-      (let* ((%define-native-callback (r 'define-synchronous-concurrent-native-callback))
-             (%foreign-declare        (r 'foreign-declare))
-             (%execute-callback       (r 'execute-callback))
-             (class                   (cadr x))
-             (name                    (caddr x))
-             (args                    (cadddr x))
-             (body                    (cddddr x))
-             (native-name             (symbol-append name '_native))
-             (native-args             (map (lambda (arg)
-                                             (if (member (car arg) '(jclass jobject))
-                                               (cons '(c-pointer void) (cdr arg))
-                                               arg)) args)))
-        `(begin
-           (,%define-native-callback (,native-name ,@native-args) int
-              (,%execute-callback (lambda () ,@body)))
-           (,%foreign-declare ,(generate-callback class name args)))))))
+      (match x
+             ((_ class name args body ...)
+              `(begin
+                 ,(generate-native-callback r name args body)
+                 ,(generate-callback r class name args)))))))
 
 (jni-init)
 
