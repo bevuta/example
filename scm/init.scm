@@ -19,6 +19,15 @@
           (string-append SDK_PATH "/platforms/android-14/android.jar"))
         ":"))))
 
+(define (execute-callback thunk)
+  (jni-env shared-jni-env)
+  (call/cc
+    (lambda (k)
+      (with-exception-handler (lambda (x) (k -1))
+                              (lambda () 
+                                (thunk)
+                                0)))))
+
 ;; generates a native implementation of the java callback method
 ;; ie: void Java_com.bevuta.androidChickenTest.Backend_onClickCallback(...) 
 ;; for each of the jobject parameters a new global ref is created, and then
@@ -58,6 +67,7 @@
     (lambda (x r c)
       (let* ((%define-native-callback (r 'define-synchronous-concurrent-native-callback))
              (%foreign-declare        (r 'foreign-declare))
+             (%execute-callback       (r 'execute-callback))
              (class                   (cadr x))
              (name                    (caddr x))
              (args                    (cadddr x))
@@ -69,7 +79,7 @@
                                                arg)) args)))
         `(begin
            (,%define-native-callback (,native-name ,@native-args) int
-             ,@body)
+              (,%execute-callback (lambda () ,@body)))
            (,%foreign-declare ,(generate-callback class name args)))))))
 
 (jni-init)
