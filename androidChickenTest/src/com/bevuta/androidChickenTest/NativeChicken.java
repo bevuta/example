@@ -25,7 +25,7 @@ public class NativeChicken extends Activity
     button.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View v) {
-        backend.sendEvent(clickEventId);
+        backend.onClick(v);
       }
     });
   }

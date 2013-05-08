@@ -7,37 +7,15 @@ import android.util.Log;
 import java.util.concurrent.locks.*;
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import android.view.View;
 
 public class Backend implements Runnable
 {
   private static final String TAG = "Backend";
-  public enum ReturnValueType { VOID, BYTE, CHAR, SHORT, INT, LONG, DOUBLE, FLOAT, OBJECT}	
-
-  public static class ReturnValue {
-    public Object objectValue;
-    public byte   byteValue;
-    public char   charValue;
-    public short  shortValue;
-    public int    intValue;
-    public long   longValue;
-    public double doubleValue;
-    public float  floatValue;
-  }
-
-  class ChickenCallback {
-    public ReturnValueType valueType;
-    public ReturnValue value;
-    public Object sourceObject;
-
-    public ChickenCallback(Object source, ReturnValueType t, ReturnValue v) {
-      this.valueType = t;
-      this.value = v;
-      this.sourceObject = source;
-    }
-  }
 
   private native void main();
-  private native void signalToScheme(int eventcode);
+  private native void signal(int eventcode);
+  private native void onClickCallback(View view, int i);
 
   private Thread thread;
   private final Lock lock = new ReentrantLock();
@@ -88,7 +66,11 @@ public class Backend implements Runnable
   }
 
   public void sendEvent(int e) {
-    signalToScheme(e);
+    signal(e);
+  }
+
+  public void onClick(View v) {
+    onClickCallback(v, 1);
   }
 
   public void run() {
