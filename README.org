@@ -3,7 +3,7 @@
   This project shows how the Chicken Scheme runtime can be used in Java/Android.
 
 ** Prerequisites
-   - First of all you need a Chicken Scheme corss compiler toolchain to build this project
+   - First of all you need a Chicken Scheme cross compiler toolchain to build this project
    - Replace the values for CHICKEN_PATH, SDK_PATH, NDK_PATH in the Makefile with the values
      matching your system configuration. Of course the CHICKEN_PATH needs to be set to the
      directory where your cross compiler toolchain was build in.
